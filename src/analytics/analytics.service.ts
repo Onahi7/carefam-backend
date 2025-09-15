@@ -200,16 +200,39 @@ export class AnalyticsService {
       if (endDate) matchQuery.createdAt.$lte = endDate
     }
 
-    const [revenue, expenses, profitLoss] = await Promise.all([
+    const [revenueData, expensesData, topProducts] = await Promise.all([
       this.getRevenueBreakdown(matchQuery),
       this.getExpenseBreakdown(matchQuery),
-      this.getProfitLossStatement(matchQuery),
+      this.getTopSellingProducts(matchQuery),
     ])
 
+    // Extract totals from aggregation results
+    const revenue = revenueData?.[0]?.totalRevenue || 0
+    const expenses = expensesData?.[0]?.totalExpenses || 0
+    const profit = revenue - expenses
+    const profitMargin = revenue > 0 ? (profit / revenue) * 100 : 0
+
+    // Format period string
+    let period = 'custom'
+    if (startDate && endDate) {
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      if (diffDays <= 7) period = 'weekly'
+      else if (diffDays <= 31) period = 'monthly'
+      else if (diffDays <= 365) period = 'yearly'
+    }
+
     return {
+      period,
       revenue,
       expenses,
-      profitLoss,
+      profit,
+      profitMargin,
+      topSellingProducts: (topProducts || []).map((product: any) => ({
+        name: product.productName || product.name || 'Unknown Product',
+        quantity: product.quantitySold || product.quantity || 0,
+        revenue: product.revenue || product.totalRevenue || 0,
+      })),
     }
   }
 
