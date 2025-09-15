@@ -7,7 +7,11 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: ["http://localhost:3000", "https://your-frontend-domain.com"],
+    origin: [
+      "http://localhost:3000", 
+      "https://carefam-frontend.vercel.app",
+      process.env.FRONTEND_URL || "https://carefam-frontend.vercel.app"
+    ],
     credentials: true,
   })
 
